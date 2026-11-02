@@ -3,7 +3,7 @@ import discord
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-CHANNEL_ID = 1419362848173621248  # vervang door jouw kanaal-ID
+CHANNEL_ID = 1566886407585267912  # vervang door jouw kanaal-ID
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
