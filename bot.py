@@ -1,53 +1,54 @@
 import discord
 import requests
 import asyncio
-import os
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-CLASH_API = os.getenv("CLASH_API_KEY")
+DISCORD_TOKEN = "DISCORD_TOKEN"
+CR_API_TOKEN = "CLASH_API_TOKEN"
+CHANNEL_ID = CHANNEL_ID
 
-CHANNEL_ID = 1566014768404496384
 CLAN_TAG = "PQ229"
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
-HEADERS = {
-    "Authorization": f"Bearer {CLASH_API}"
-}
+def get_river_race():
+    url = f"https://api.clashroyale.com/v1/clans/%23{CLAN_TAG}/currentriverrace"
+
+    headers = {
+        "Authorization": f"Bearer {CR_API_TOKEN}"
+    }
+
+    r = requests.get(url, headers=headers)
+
+    if r.status_code != 200:
+        return "Kan River Race data niet ophalen."
+
+    data = r.json()
+
+    clans = data.get("clans", [])
+
+    msg = "🏆 River Race Stand\n\n"
+
+    for i, clan in enumerate(clans, start=1):
+        name = clan["name"]
+        fame = clan.get("fame", 0)
+
+        msg += f"{i}. {name} - {fame} fame\n"
+
+    return msg
+
 
 @client.event
 async def on_ready():
-    print(f"Logged in as {client.user}")
-
-    channel = client.get_channel(CHANNEL_ID)
+    print(f"Bot online als {client.user}")
 
     while True:
-        try:
-            url = f"https://api.clashroyale.com/v1/clans/%23{CLAN_TAG}"
+        channel = client.get_channel(CHANNEL_ID)
 
-            response = requests.get(url, headers=HEADERS)
+        if channel:
+            await channel.send(get_river_race())
 
-            if response.status_code == 200:
-                clan = response.json()
+        await asyncio.sleep(86400)
 
-                message = (
-                    f"🏆 {clan['name']}\n"
-                    f"👥 Members: {clan['members']}/50\n"
-                    f"🏅 Clan Score: {clan['clanScore']}\n"
-                    f"⭐ War Trophies: {clan['clanWarTrophies']}"
-                )
 
-                await channel.send(message)
-            else:
-                print(
-                    f"API Error: {response.status_code} - "
-                    f"{response.text}"
-                )
-
-        except Exception as e:
-            print(f"Error: {e}")
-
-        await asyncio.sleep(3600)
-
-client.run(TOKEN)
+client.run(DISCORD_TOKEN)
