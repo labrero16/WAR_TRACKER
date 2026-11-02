@@ -1,9 +1,11 @@
 import os
 import discord
+import requests
 
 TOKEN = os.getenv("DISCORD_TOKEN")
+CLASH_API_KEY = os.getenv("CLASH_API_KEY")
 
-CHANNEL_ID = 1566886407585267912  # vervang door jouw kanaal-ID
+CLAN_TAG = "PQ229"
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -12,9 +14,20 @@ client = discord.Client(intents=intents)
 async def on_ready():
     print(f"Bot online als {client.user}")
 
-    channel = client.get_channel(CHANNEL_ID)
+    headers = {
+        "Authorization": f"Bearer {CLASH_API_KEY}"
+    }
 
-    if channel:
-        await channel.send("@everybody ✅ Lab War Tracker is online!")
+    url = f"https://api.clashroyale.com/v1/clans/%23{CLAN_TAG}"
+
+    response = requests.get(url, headers=headers)
+
+    print("Status:", response.status_code)
+
+    if response.status_code == 200:
+        data = response.json()
+        print("Clan:", data["name"])
+    else:
+        print(response.text)
 
 client.run(TOKEN)
