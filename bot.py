@@ -38,7 +38,7 @@ async def on_ready():
                 data = response.json()
 
                 await channel.send(
-                    f"✅ API werkt!\n"
+                    f"@everybody ✅ API werkt!\n"
                     f"Clan: {data['name']}\n"
                     f"Leden: {data['members']}\n"
                     f"Trophies: {data['clanScore']}"
