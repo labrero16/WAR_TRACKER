@@ -7,6 +7,7 @@ from discord import app_commands
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 CLASH_API_KEY = os.getenv("CLASH_API_KEY")
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
 CLAN_TAG = "PQ229"
 
@@ -19,7 +20,86 @@ tree = app_commands.CommandTree(client)
 @client.event
 async def on_ready():
     await tree.sync()
+
     print(f"Bot online als {client.user}")
+
+    if not hasattr(client, "daily_task_started"):
+        client.daily_task_started = True
+        asyncio.create_task(dagelijkse_melding())
+
+
+async def stuur_deck_melding():
+
+    headers = {
+        "Authorization": f"Bearer {CLASH_API_KEY}"
+    }
+
+    url = f"https://api.clashroyale.com/v1/clans/%23{CLAN_TAG}/currentriverrace"
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        print(f"API fout: {response.status_code}")
+        return
+
+    data = response.json()
+
+    eigen_clan = None
+
+    for clan in data.get("clans", []):
+        if clan.get("tag", "").replace("#", "") == CLAN_TAG:
+            eigen_clan = clan
+            break
+
+    if not eigen_clan:
+        return
+
+    deelnemers = eigen_clan.get("participants", [])
+
+    spelers_met_decks = []
+
+    for speler in deelnemers:
+
+        naam = speler.get("name", "Onbekend")
+
+        decks_remaining = speler.get("decksRemainingToday")
+
+        if decks_remaining is None:
+            decks_used = speler.get("decksUsedToday", 0)
+            decks_remaining = max(0, 4 - decks_used)
+
+        if decks_remaining > 0:
+            spelers_met_decks.append(
+                f"• **{naam}** ({decks_remaining} decks over)"
+            )
+
+    if spelers_met_decks:
+        bericht = (
+            "⚠️ **Spelers met resterende war decks**\n\n"
+            + "\n".join(spelers_met_decks)
+        )
+    else:
+        bericht = "✅ Iedereen heeft alle war decks gespeeld."
+
+    channel = client.get_channel(CHANNEL_ID)
+
+    if channel:
+        await channel.send(bericht)
+
+
+async def dagelijkse_melding():
+
+    await client.wait_until_ready()
+
+    while not client.is_closed():
+
+        nu = datetime.now()
+
+        if nu.hour == 18 and nu.minute == 0:
+            await stuur_deck_melding()
+            await asyncio.sleep(60)
+
+        await asyncio.sleep(20)
 
 
 @tree.command(
@@ -52,11 +132,11 @@ async def war(interaction: discord.Interaction):
     clans = data.get("clans", [])
 
     for position, clan in enumerate(clans, start=1):
-        name = clan.get("name", "Onbekend")
+        naam = clan.get("name", "Onbekend")
         fame = clan.get("fame", 0)
 
         embed.add_field(
-            name=f"{position}. {name}",
+            name=f"{position}. {naam}",
             value=f"Fame: {fame}",
             inline=False
         )
