@@ -39,7 +39,7 @@ async def stuur_deck_melding():
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
-        print(f"API fout: {response.status_code}")
+        print(f"API fout: {response.status_code} - {response.text}")
         return
 
     data = response.json()
@@ -62,15 +62,15 @@ async def stuur_deck_melding():
 
         naam = speler.get("name", "Onbekend")
 
-        decks_remaining = speler.get("decksRemainingToday")
+        resterend = speler.get("decksRemainingToday")
 
-        if decks_remaining is None:
-            decks_used = speler.get("decksUsedToday", 0)
-            decks_remaining = max(0, 4 - decks_used)
+        if resterend is None:
+            gebruikt = speler.get("decksUsedToday", 0)
+            resterend = max(0, 4 - gebruikt)
 
-        if decks_remaining > 0:
+        if resterend > 0:
             spelers_met_decks.append(
-                f"• **{naam}** ({decks_remaining} decks over)"
+                f"• **{naam}** ({resterend} decks over)"
             )
 
     if spelers_met_decks:
@@ -95,7 +95,7 @@ async def dagelijkse_melding():
 
         nu = datetime.now()
 
-        if nu.hour == 12 and nu.minute == 25:
+        if nu.hour == 13 and nu.minute == 0:
             await stuur_deck_melding()
             await asyncio.sleep(60)
 
@@ -108,6 +108,8 @@ async def dagelijkse_melding():
 )
 async def war(interaction: discord.Interaction):
 
+    await interaction.response.defer()
+
     headers = {
         "Authorization": f"Bearer {CLASH_API_KEY}"
     }
@@ -117,8 +119,8 @@ async def war(interaction: discord.Interaction):
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
-        await interaction.response.send_message(
-            f"❌ API-fout ({response.status_code})"
+        await interaction.followup.send(
+            f"❌ API-fout ({response.status_code})\n{response.text}"
         )
         return
 
@@ -132,6 +134,7 @@ async def war(interaction: discord.Interaction):
     clans = data.get("clans", [])
 
     for position, clan in enumerate(clans, start=1):
+
         naam = clan.get("name", "Onbekend")
         fame = clan.get("fame", 0)
 
@@ -141,7 +144,7 @@ async def war(interaction: discord.Interaction):
             inline=False
         )
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 @tree.command(
@@ -149,6 +152,8 @@ async def war(interaction: discord.Interaction):
     description="Toon de punten van de laatste war"
 )
 async def warpunten(interaction: discord.Interaction):
+
+    await interaction.response.defer()
 
     headers = {
         "Authorization": f"Bearer {CLASH_API_KEY}"
@@ -159,15 +164,15 @@ async def warpunten(interaction: discord.Interaction):
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
-        await interaction.response.send_message(
-            f"❌ API-fout ({response.status_code})"
+        await interaction.followup.send(
+            f"❌ API-fout ({response.status_code})\n{response.text}"
         )
         return
 
     data = response.json()
 
     if not data.get("items"):
-        await interaction.response.send_message(
+        await interaction.followup.send(
             "❌ Geen war-geschiedenis gevonden."
         )
         return
@@ -179,6 +184,7 @@ async def warpunten(interaction: discord.Interaction):
     eigen_clan = None
 
     for standing in standings:
+
         clan = standing.get("clan", {})
 
         if clan.get("tag", "").replace("#", "") == CLAN_TAG:
@@ -186,7 +192,7 @@ async def warpunten(interaction: discord.Interaction):
             break
 
     if not eigen_clan:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             "❌ Jouw clan werd niet gevonden in de laatste war."
         )
         return
@@ -194,7 +200,7 @@ async def warpunten(interaction: discord.Interaction):
     deelnemers = eigen_clan.get("participants", [])
 
     if not deelnemers:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             "⚠️ De Clash Royale API geeft geen deelnemers terug voor deze war."
         )
         return
@@ -216,7 +222,7 @@ async def warpunten(interaction: discord.Interaction):
     if len(bericht) > 1900:
         bericht = bericht[:1900]
 
-    await interaction.response.send_message(bericht)
+    await interaction.followup.send(bericht)
 
 
 client.run(TOKEN)
