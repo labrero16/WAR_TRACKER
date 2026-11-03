@@ -95,7 +95,7 @@ async def dagelijkse_melding():
 
         nu = datetime.now()
 
-        if nu.hour == 18 and nu.minute == 0:
+        if nu.hour == 13 and nu.minute == 0:
             await stuur_deck_melding()
             await asyncio.sleep(60)
 
