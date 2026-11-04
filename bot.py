@@ -546,5 +546,186 @@ async def colosseum(interaction: discord.Interaction):
     await interaction.followup.send(
         embed=embed
     )
-    
+
+@tree.command(
+    name="boat",
+    description="Analyse van boat attacks versus gewone battles"
+)
+async def boat(interaction: discord.Interaction):
+
+    await interaction.response.defer()
+
+    response = api_get(
+        f"clans/%23{CLAN_TAG}/currentriverrace"
+    )
+
+    if response is None:
+
+        await interaction.followup.send(
+            "❌ Verbindingsfout met Clash Royale API."
+        )
+        return
+
+    if response.status_code != 200:
+
+        await interaction.followup.send(
+            f"❌ API-fout ({response.status_code})\n{response.text}"
+        )
+        return
+
+    data = response.json()
+
+    eigen_clan = None
+
+    for clan in data.get("clans", []):
+
+        if clan.get("tag", "").replace("#", "") == CLAN_TAG:
+            eigen_clan = clan
+            break
+
+    if eigen_clan is None:
+
+        await interaction.followup.send(
+            "❌ Eigen clan niet gevonden."
+        )
+        return
+
+    deelnemers = eigen_clan.get("participants", [])
+
+    totaal_fame = 0
+    totaal_gebruikte_decks = 0
+    totaal_resterende_decks = 0
+    totaal_boat_attacks = 0
+    totaal_repair_points = 0
+
+    spelers_met_decks = []
+
+    for speler in deelnemers:
+
+        naam = speler.get(
+            "name",
+            "Onbekend"
+        )
+
+        fame = speler.get(
+            "fame",
+            0
+        )
+
+        gebruikt = speler.get(
+            "decksUsedToday",
+            0
+        )
+
+        resterend = speler.get(
+            "decksRemainingToday"
+        )
+
+        if resterend is None:
+            resterend = max(
+                0,
+                4 - gebruikt
+            )
+
+        boat_attacks = speler.get(
+            "boatAttacks",
+            0
+        )
+
+        repair_points = speler.get(
+            "repairPoints",
+            0
+        )
+
+        totaal_fame += fame
+        totaal_gebruikte_decks += gebruikt
+        totaal_resterende_decks += resterend
+        totaal_boat_attacks += boat_attacks
+        totaal_repair_points += repair_points
+
+        if resterend > 0:
+
+            spelers_met_decks.append(
+                (naam, resterend)
+            )
+
+    if totaal_gebruikte_decks > 0:
+
+        fame_per_deck = (
+            totaal_fame /
+            totaal_gebruikte_decks
+        )
+
+    else:
+
+        fame_per_deck = 200
+
+    maximale_extra_fame = int(
+        totaal_resterende_decks *
+        fame_per_deck
+    )
+
+    kost_1_boat = int(
+        fame_per_deck
+    )
+
+    kost_5_boat = int(
+        fame_per_deck * 5
+    )
+
+    kost_10_boat = int(
+        fame_per_deck * 10
+    )
+
+    kost_20_boat = int(
+        fame_per_deck * 20
+    )
+
+    spelers_met_decks = sorted(
+        spelers_met_decks,
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    embed = discord.Embed(
+        title="🚢 Boat Analyse",
+        color=0x0099ff
+    )
+
+    embed.add_field(
+        name="⚔️ Gem. fame/deck",
+        value=f"{fame_per_deck:.1f}",
+        inline=True
+    )
+
+    embed.add_field(
+        name="🎴 Resterende decks",
+        value=str(
+            totaal_resterende_decks
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="📈 Maximale fame",
+        value=f"{maximale_extra_fame:,}".replace(
+            ",",
+            "."
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🚢 Boat attacks",
+        value=str(
+            totaal_boat_attacks
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🔧 Repair points",
+        value=str(
+            totaal
+
 client.run(TOKEN)
