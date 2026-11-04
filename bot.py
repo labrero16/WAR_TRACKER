@@ -169,6 +169,7 @@ async def war(interaction: discord.Interaction):
         return
 
     data = response.json()
+    print(data)
 
     clans = sorted(
         data.get("clans", []),
