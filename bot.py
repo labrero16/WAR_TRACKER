@@ -850,7 +850,7 @@ async def strategy(interaction: discord.Interaction):
 
     voorspelde_clans = []
 
-    for clan in data.get("clans", []):
+  for clan in data.get("clans", []):
 
         clan_fame = clan.get(
             "fame",
@@ -881,26 +881,27 @@ async def strategy(interaction: discord.Interaction):
 
             resterende_decks += resterend
 
-resterende_decks = min(
-    resterende_decks,
-    200
-)
+        resterende_decks = min(
+            resterende_decks,
+            200
+        )
 
-voorspelde_score = int(
-    clan_fame +
-    (
-        resterende_decks *
-        fame_per_deck
-    )
-)
-print(
-    f"{clan.get('name')} | "
-    f"fame={clan_fame} | "
-    f"decks={resterende_decks} | "
-    f"fame_per_deck={fame_per_deck} | "
-    f"score={voorspelde_score}"
-)
-        
+        voorspelde_score = int(
+            clan_fame +
+            (
+                resterende_decks *
+                fame_per_deck
+            )
+        )
+
+        print(
+            f"{clan.get('name')} | "
+            f"fame={clan_fame} | "
+            f"decks={resterende_decks} | "
+            f"fame_per_deck={fame_per_deck} | "
+            f"score={voorspelde_score}"
+        )
+
         voorspelde_clans.append({
             "naam": clan.get(
                 "name",
@@ -912,7 +913,7 @@ print(
                 ""
             ).replace("#", "")
         })
-
+      
     voorspelde_clans = sorted(
         voorspelde_clans,
         key=lambda x: x["score"],
