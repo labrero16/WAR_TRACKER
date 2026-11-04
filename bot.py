@@ -167,7 +167,7 @@ async def war(interaction: discord.Interaction):
             f"❌ API-fout ({response.status_code})\n{response.text}"
         )
         return
-        
+
     import json
 
     data = response.json()
@@ -177,15 +177,15 @@ async def war(interaction: discord.Interaction):
     print("========== EINDE API DATA ==========\n")
 
     clans = sorted(
-    data.get("clans", []),
-    key=lambda x: x.get("fame", 0),
-    reverse=True
+        data.get("clans", []),
+        key=lambda x: x.get("fame", 0),
+        reverse=True
     )
 
     embed = discord.Embed(
         title="🏆 River Race Stand",
         color=0xffd700
-)
+    )
 
     for positie, clan in enumerate(clans, start=1):
 
@@ -201,7 +201,6 @@ async def war(interaction: discord.Interaction):
     await interaction.followup.send(
         embed=embed
     )
-
 
 @tree.command(
     name="warpunten",
