@@ -901,6 +901,14 @@ async def strategy(interaction: discord.Interaction):
             ).replace("#", "")
         })
 
+    print(
+    f"{clan.get('name')} | "
+    f"fame={clan_fame} | "
+    f"decks={resterende_decks} | "
+    f"fame_per_deck={fame_per_deck} | "
+    f"score={voorspelde_score}"
+)
+
     voorspelde_clans = sorted(
         voorspelde_clans,
         key=lambda x: x["score"],
