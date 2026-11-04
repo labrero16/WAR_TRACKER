@@ -167,9 +167,14 @@ async def war(interaction: discord.Interaction):
             f"❌ API-fout ({response.status_code})\n{response.text}"
         )
         return
+        
+import json
 
-    data = response.json()
-    print(data)
+data = response.json()
+
+print("\n========== START API DATA ==========")
+print(json.dumps(data, indent=2))
+print("========== EINDE API DATA ==========\n")
 
     clans = sorted(
         data.get("clans", []),
