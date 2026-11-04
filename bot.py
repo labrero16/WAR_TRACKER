@@ -774,5 +774,241 @@ async def boat(interaction: discord.Interaction):
     await interaction.followup.send(
         embed=embed
     )
+@tree.command(
+    name="strategy",
+    description="Strategische analyse van boat attacks"
+)
+async def strategy(interaction: discord.Interaction):
+
+    await interaction.response.defer()
+
+    response = api_get(
+        f"clans/%23{CLAN_TAG}/currentriverrace"
+    )
+
+    if response is None:
+
+        await interaction.followup.send(
+            "❌ Verbindingsfout met Clash Royale API."
+        )
+        return
+
+    if response.status_code != 200:
+
+        await interaction.followup.send(
+            f"❌ API-fout ({response.status_code})\n{response.text}"
+        )
+        return
+
+    data = response.json()
+
+    eigen_clan = None
+
+    for clan in data.get("clans", []):
+
+        if clan.get("tag", "").replace("#", "") == CLAN_TAG:
+            eigen_clan = clan
+            break
+
+    if eigen_clan is None:
+
+        await interaction.followup.send(
+            "❌ Eigen clan niet gevonden."
+        )
+        return
+
+    deelnemers = eigen_clan.get(
+        "participants",
+        []
+    )
+
+    totale_fame = 0
+    totale_gebruikte_decks = 0
+
+    for speler in deelnemers:
+
+        totale_fame += speler.get(
+            "fame",
+            0
+        )
+
+        totale_gebruikte_decks += speler.get(
+            "decksUsedToday",
+            0
+        )
+
+    if totale_gebruikte_decks > 0:
+
+        fame_per_deck = (
+            totale_fame /
+            totale_gebruikte_decks
+        )
+
+    else:
+
+        fame_per_deck = 200
+
+    voorspelde_clans = []
+
+    for clan in data.get("clans", []):
+
+        clan_fame = clan.get(
+            "fame",
+            0
+        )
+
+        resterende_decks = 0
+
+        for speler in clan.get(
+            "participants",
+            []
+        ):
+
+            gebruikt = speler.get(
+                "decksUsedToday",
+                0
+            )
+
+            resterend = speler.get(
+                "decksRemainingToday"
+            )
+
+            if resterend is None:
+                resterend = max(
+                    0,
+                    4 - gebruikt
+                )
+
+            resterende_decks += resterend
+
+        voorspelde_score = int(
+            clan_fame +
+            (
+                resterende_decks *
+                fame_per_deck
+            )
+        )
+
+        voorspelde_clans.append({
+            "naam": clan.get(
+                "name",
+                "Onbekend"
+            ),
+            "score": voorspelde_score,
+            "tag": clan.get(
+                "tag",
+                ""
+            ).replace("#", "")
+        })
+
+    voorspelde_clans = sorted(
+        voorspelde_clans,
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    eigen_index = None
+
+    for i, clan in enumerate(
+        voorspelde_clans
+    ):
+
+        if clan["tag"] == CLAN_TAG:
+            eigen_index = i
+            break
+
+    if eigen_index is None:
+
+        await interaction.followup.send(
+            "❌ Eigen clan niet gevonden."
+        )
+        return
+
+    if eigen_index < len(
+        voorspelde_clans
+    ) - 1:
+
+        marge = (
+            voorspelde_clans[eigen_index]["score"]
+            -
+            voorspelde_clans[eigen_index + 1]["score"]
+        )
+
+    else:
+
+        marge = 0
+
+    if fame_per_deck > 0:
+
+        veilige_boats = int(
+            marge /
+            fame_per_deck
+        )
+
+    else:
+
+        veilige_boats = 0
+
+    stand = ""
+
+    for positie, clan in enumerate(
+        voorspelde_clans[:5],
+        start=1
+    ):
+
+        stand += (
+            f"{positie}. "
+            f"{clan['naam']} "
+            f"({clan['score']:,})\n"
+        ).replace(",", ".")
+
+    embed = discord.Embed(
+        title="🚢 Strategische Analyse",
+        color=0x2ecc71
+    )
+
+    embed.add_field(
+        name="🏆 Verwachte eindstand",
+        value=stand,
+        inline=False
+    )
+
+    embed.add_field(
+        name="⚔️ Gem. fame/deck",
+        value=f"{fame_per_deck:.1f}",
+        inline=True
+    )
+
+    embed.add_field(
+        name="📊 Marge",
+        value=f"{marge:,}".replace(
+            ",",
+            "."
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🚢 Veilige boat attacks",
+        value=str(
+            veilige_boats
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🎯 Advies",
+        value=(
+            f"✅ Tot "
+            f"{veilige_boats} "
+            f"boat attacks blijft de "
+            f"huidige positie behouden."
+        ),
+        inline=False
+    )
+
+    await interaction.followup.send(
+        embed=embed
+    )
 
 client.run(TOKEN)
