@@ -176,16 +176,16 @@ print("\n========== START API DATA ==========")
 print(json.dumps(data, indent=2))
 print("========== EINDE API DATA ==========\n")
 
-    clans = sorted(
-        data.get("clans", []),
-        key=lambda x: x.get("fame", 0),
-        reverse=True
+clans = sorted(
+    data.get("clans", []),
+    key=lambda x: x.get("fame", 0),
+    reverse=True
     )
 
     embed = discord.Embed(
         title="🏆 River Race Stand",
         color=0xffd700
-    )
+)
 
     for positie, clan in enumerate(clans, start=1):
 
