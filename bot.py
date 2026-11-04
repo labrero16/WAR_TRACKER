@@ -168,15 +168,15 @@ async def war(interaction: discord.Interaction):
         )
         return
         
-import json
+    import json
 
-data = response.json()
+    data = response.json()
 
-print("\n========== START API DATA ==========")
-print(json.dumps(data, indent=2))
-print("========== EINDE API DATA ==========\n")
+    print("\n========== START API DATA ==========")
+    print(json.dumps(data, indent=2))
+    print("========== EINDE API DATA ==========\n")
 
-clans = sorted(
+    clans = sorted(
     data.get("clans", []),
     key=lambda x: x.get("fame", 0),
     reverse=True
