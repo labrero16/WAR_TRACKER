@@ -726,6 +726,53 @@ async def boat(interaction: discord.Interaction):
     embed.add_field(
         name="🔧 Repair points",
         value=str(
-            totaal
+            totaal_repair_points
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="💸 Kost boat attack",
+        value=(
+            f"1 attack = {kost_1_boat}\n"
+            f"5 attacks = {kost_5_boat}\n"
+            f"10 attacks = {kost_10_boat}\n"
+            f"20 attacks = {kost_20_boat}"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🎯 Advies",
+        value=(
+            "Elke boat attack gebruikt "
+            "één deck dat anders fame "
+            "zou opleveren via een battle.\n\n"
+            "Gebruik boat attacks vooral "
+            "om een tegenstander te vertragen "
+            "of een boot af te maken."
+        ),
+        inline=False
+    )
+
+    if spelers_met_decks:
+
+        lijst = "\n".join(
+            [
+                f"• {naam} ({decks})"
+                for naam, decks
+                in spelers_met_decks[:10]
+            ]
+        )
+
+        embed.add_field(
+            name="👥 Spelers met meeste decks over",
+            value=lijst,
+            inline=False
+        )
+
+    await interaction.followup.send(
+        embed=embed
+    )
 
 client.run(TOKEN)
