@@ -881,14 +881,18 @@ async def strategy(interaction: discord.Interaction):
 
             resterende_decks += resterend
 
-        voorspelde_score = int(
-            clan_fame +
-            (
-                resterende_decks *
-                fame_per_deck
-            )
-        )
+resterende_decks = min(
+    resterende_decks,
+    200
+)
 
+voorspelde_score = int(
+    clan_fame +
+    (
+        resterende_decks *
+        fame_per_deck
+    )
+)
 print(
     f"{clan.get('name')} | "
     f"fame={clan_fame} | "
