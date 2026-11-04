@@ -376,9 +376,7 @@ async def colosseum(interaction: discord.Interaction):
     for speler in deelnemers:
 
         naam = speler.get("name", "Onbekend")
-
         fame = speler.get("fame", 0)
-
         gebruikt = speler.get("decksUsedToday", 0)
 
         resterend = speler.get("decksRemainingToday")
@@ -388,7 +386,6 @@ async def colosseum(interaction: discord.Interaction):
 
         totale_fame += fame
         totale_gebruikte_decks += gebruikt
-
         totaal_resterende_decks += resterend
 
         if resterend > 0:
@@ -429,13 +426,21 @@ async def colosseum(interaction: discord.Interaction):
         0
     )
 
-    if leider.get("tag", "").replace("#", "") == CLAN_TAG:
+    if huidige_score == 0:
+
+        achterstand = 0
+
+        kans_tekst = (
+            "ℹ️ Er zijn nog geen war battles gespeeld."
+        )
+
+    elif leider.get("tag", "").replace("#", "") == CLAN_TAG:
+
+        achterstand = 0
 
         kans_tekst = (
             "🥇 Jullie staan momenteel op de eerste plaats."
         )
-
-        achterstand = 0
 
     else:
 
