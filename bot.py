@@ -307,7 +307,7 @@ async def warpunten(interaction: discord.Interaction):
 
 @tree.command(
     name="colosseum",
-    description="Toon de colosseum/riverrace analyse"
+    description="Geavanceerde colosseum analyse"
 )
 async def colosseum(interaction: discord.Interaction):
 
@@ -339,73 +339,202 @@ async def colosseum(interaction: discord.Interaction):
         reverse=True
     )
 
-    eigen_index = None
+    eigen_clan = None
+    eigen_positie = None
 
     for i, clan in enumerate(clans):
 
         if clan.get("tag", "").replace("#", "") == CLAN_TAG:
-            eigen_index = i
+            eigen_clan = clan
+            eigen_positie = i + 1
             break
 
-    if eigen_index is None:
+    if eigen_clan is None:
 
         await interaction.followup.send(
             "❌ Eigen clan niet gevonden."
         )
         return
 
-    eigen_clan = clans[eigen_index]
+    deelnemers = eigen_clan.get("participants", [])
 
-    bericht = "🏟️ **Colosseum Analyse**\n\n"
+    huidige_score = eigen_clan.get("fame", 0)
 
-    for positie, clan in enumerate(clans, start=1):
+    totaal_resterende_decks = 0
+    actieve_spelers = 0
 
-        naam = clan.get("name", "Onbekend")
-        fame = clan.get("fame", 0)
+    totale_fame = 0
+    totale_gebruikte_decks = 0
 
-        marker = ""
+    spelers_over = []
 
-        if clan.get("tag", "").replace("#", "") == CLAN_TAG:
-            marker = " 👈"
+    for speler in deelnemers:
 
-        bericht += (
-            f"**{positie}. {naam}** - {fame}{marker}\n"
-        )
+        naam = speler.get("name", "Onbekend")
 
-    bericht += "\n"
+        fame = speler.get("fame", 0)
 
-    eigen_fame = eigen_clan.get("fame", 0)
+        gebruikt = speler.get("decksUsedToday", 0)
 
-    if eigen_index > 0:
+        resterend = speler.get("decksRemainingToday")
 
-        leider_fame = clans[0].get("fame", 0)
+        if resterend is None:
+            resterend = max(0, 4 - gebruikt)
 
-        verschil_leider = leider_fame - eigen_fame
+        totale_fame += fame
+        totale_gebruikte_decks += gebruikt
 
-        bericht += (
-            f"📈 Achterstand op leider: "
-            f"**{verschil_leider}** fame\n"
+        totaal_resterende_decks += resterend
+
+        if resterend > 0:
+
+            actieve_spelers += 1
+
+            spelers_over.append(
+                f"• {naam} ({resterend})"
+            )
+
+    if totale_gebruikte_decks > 0:
+
+        fame_per_deck = (
+            totale_fame / totale_gebruikte_decks
         )
 
     else:
 
-        bericht += (
-            "🥇 Jullie staan momenteel op de eerste plaats\n"
+        fame_per_deck = 200
+
+    verwachte_extra_fame = int(
+        totaal_resterende_decks * fame_per_deck
+    )
+
+    verwachte_eindscore = (
+        huidige_score + verwachte_extra_fame
+    )
+
+    leider = clans[0]
+
+    leider_naam = leider.get(
+        "name",
+        "Onbekend"
+    )
+
+    leider_fame = leider.get(
+        "fame",
+        0
+    )
+
+    if leider.get("tag", "").replace("#", "") == CLAN_TAG:
+
+        kans_tekst = (
+            "🥇 Jullie staan momenteel op de eerste plaats."
         )
 
-    if eigen_index < len(clans) - 1:
+        achterstand = 0
 
-        achtervolger_fame = (
-            clans[eigen_index + 1].get("fame", 0)
+    else:
+
+        achterstand = max(
+            0,
+            leider_fame - huidige_score
         )
 
-        voorsprong = eigen_fame - achtervolger_fame
+        if verwachte_extra_fame >= achterstand * 2:
 
-        bericht += (
-            f"📉 Voorsprong op achtervolger: "
-            f"**{voorsprong}** fame\n"
+            kans_tekst = (
+                "✅ Zeer grote kans om de leider te pakken."
+            )
+
+        elif verwachte_extra_fame >= achterstand:
+
+            kans_tekst = (
+                "⚠️ Kans aanwezig als spelers hun decks gebruiken."
+            )
+
+        else:
+
+            kans_tekst = (
+                "❌ Leider lijkt voorlopig buiten bereik."
+            )
+
+    embed = discord.Embed(
+        title="🏟️ Colosseum Analyse",
+        color=0x3498db
+    )
+
+    embed.add_field(
+        name="📍 Huidige positie",
+        value=str(eigen_positie),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🏆 Huidige score",
+        value=f"{huidige_score:,}".replace(",", "."),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🎴 Resterende decks",
+        value=str(totaal_resterende_decks),
+        inline=True
+    )
+
+    embed.add_field(
+        name="👥 Actieve spelers",
+        value=str(actieve_spelers),
+        inline=True
+    )
+
+    embed.add_field(
+        name="⚔️ Gem. fame/deck",
+        value=f"{fame_per_deck:.1f}",
+        inline=True
+    )
+
+    embed.add_field(
+        name="📈 Verwachte extra fame",
+        value=f"{verwachte_extra_fame:,}".replace(",", "."),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🎯 Verwachte eindscore",
+        value=f"{verwachte_eindscore:,}".replace(",", "."),
+        inline=False
+    )
+
+    if achterstand > 0:
+
+        embed.add_field(
+            name=f"🥇 Leider: {leider_naam}",
+            value=(
+                f"{leider_fame:,}".replace(",", ".")
+                + f"\nAchterstand: {achterstand:,}".replace(",", ".")
+            ),
+            inline=False
         )
 
-    await interaction.followup.send(bericht)
+    embed.add_field(
+        name="🔮 Prognose",
+        value=kans_tekst,
+        inline=False
+    )
+
+    if spelers_over:
+
+        lijst = "\n".join(
+            spelers_over[:15]
+        )
+
+        embed.add_field(
+            name="⚠️ Spelers met decks over",
+            value=lijst,
+            inline=False
+        )
+
+    await interaction.followup.send(
+        embed=embed
+    )
     
 client.run(TOKEN)
