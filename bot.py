@@ -1138,8 +1138,30 @@ async def testsnapshot(
 
     await save_colosseum_snapshot()
 
-    await interaction.response.send_message(
-        "✅ Snapshot opgeslagen."
+    import os
+
+    bestaat = os.path.exists(
+        "colosseum_history.json"
     )
+
+    if bestaat:
+
+        with open(
+            "colosseum_history.json",
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            inhoud = f.read()
+
+        await interaction.response.send_message(
+            f"✅ Snapshot opgeslagen.\n\n```json\n{inhoud[:1500]}\n```"
+        )
+
+    else:
+
+        await interaction.response.send_message(
+            "❌ colosseum_history.json werd niet aangemaakt."
+        )
 
 client.run(TOKEN)
