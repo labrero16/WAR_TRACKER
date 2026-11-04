@@ -774,6 +774,7 @@ async def boat(interaction: discord.Interaction):
     await interaction.followup.send(
         embed=embed
     )
+
 @tree.command(
     name="strategy",
     description="Strategische analyse van boat attacks"
@@ -850,7 +851,7 @@ async def strategy(interaction: discord.Interaction):
 
     voorspelde_clans = []
 
-  for clan in data.get("clans", []):
+    for clan in data.get("clans", []):
 
         clan_fame = clan.get(
             "fame",
@@ -874,6 +875,7 @@ async def strategy(interaction: discord.Interaction):
             )
 
             if resterend is None:
+
                 resterend = max(
                     0,
                     4 - gebruikt
@@ -894,14 +896,6 @@ async def strategy(interaction: discord.Interaction):
             )
         )
 
-        print(
-            f"{clan.get('name')} | "
-            f"fame={clan_fame} | "
-            f"decks={resterende_decks} | "
-            f"fame_per_deck={fame_per_deck} | "
-            f"score={voorspelde_score}"
-        )
-
         voorspelde_clans.append({
             "naam": clan.get(
                 "name",
@@ -913,7 +907,7 @@ async def strategy(interaction: discord.Interaction):
                 ""
             ).replace("#", "")
         })
-      
+
     voorspelde_clans = sorted(
         voorspelde_clans,
         key=lambda x: x["score"],
@@ -994,10 +988,7 @@ async def strategy(interaction: discord.Interaction):
 
     embed.add_field(
         name="📊 Marge",
-        value=f"{marge:,}".replace(
-            ",",
-            "."
-        ),
+        value=f"{marge:,}".replace(",", "."),
         inline=True
     )
 
@@ -1012,10 +1003,8 @@ async def strategy(interaction: discord.Interaction):
     embed.add_field(
         name="🎯 Advies",
         value=(
-            f"✅ Tot "
-            f"{veilige_boats} "
-            f"boat attacks blijft de "
-            f"huidige positie behouden."
+            f"✅ Tot {veilige_boats} boat attacks "
+            f"blijft de huidige positie behouden."
         ),
         inline=False
     )
@@ -1023,5 +1012,5 @@ async def strategy(interaction: discord.Interaction):
     await interaction.followup.send(
         embed=embed
     )
-
+            
 client.run(TOKEN)
