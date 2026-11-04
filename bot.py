@@ -1128,4 +1128,18 @@ async def save_colosseum_snapshot():
         f"({datum}) positie={positie} fame={fame}"
     )
 
+@tree.command(
+    name="testsnapshot",
+    description="Test Colosseum snapshot"
+)
+async def testsnapshot(
+    interaction: discord.Interaction
+):
+
+    await save_colosseum_snapshot()
+
+    await interaction.response.send_message(
+        "✅ Snapshot opgeslagen."
+    )
+
 client.run(TOKEN)
