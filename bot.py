@@ -883,6 +883,7 @@ async def strategy(interaction: discord.Interaction):
 
             resterende_decks += resterend
 
+        # Maximaal 200 war decks per clan
         resterende_decks = min(
             resterende_decks,
             200
@@ -896,20 +897,21 @@ async def strategy(interaction: discord.Interaction):
             )
         )
 
-        voorspelde_clans.append({
-            "naam": clan.get(
-                "name",
-                "Onbekend"
-            ),
-            "score": voorspelde_score,
-            "tag": clan.get(
-                "tag",
-                ""
-            ).replace("#", "")
-        })
+        voorspelde_clans.append(
+            {
+                "naam": clan.get(
+                    "name",
+                    "Onbekend"
+                ),
+                "score": voorspelde_score,
+                "tag": clan.get(
+                    "tag",
+                    ""
+                ).replace("#", "")
+            }
+        )
 
-    voorspelde_clans = sorted(
-        voorspelde_clans,
+    voorspelde_clans.sort(
         key=lambda x: x["score"],
         reverse=True
     )
@@ -921,6 +923,7 @@ async def strategy(interaction: discord.Interaction):
     ):
 
         if clan["tag"] == CLAN_TAG:
+
             eigen_index = i
             break
 
@@ -948,8 +951,7 @@ async def strategy(interaction: discord.Interaction):
     if fame_per_deck > 0:
 
         veilige_boats = int(
-            marge /
-            fame_per_deck
+            marge / fame_per_deck
         )
 
     else:
