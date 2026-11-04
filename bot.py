@@ -132,15 +132,21 @@ async def dagelijkse_melding():
 
         nu = datetime.now(TIMEZONE)
 
-        if nu.hour == 12 and nu.minute == 30:
+         if nu.hour == 12 and nu.minute == 30:
 
             await stuur_deck_melding()
 
             # voorkomt dubbele melding
             await asyncio.sleep(60)
 
-        await asyncio.sleep(20)
+        if nu.hour == 23 and nu.minute == 59:
 
+            await save_colosseum_snapshot()
+
+            # voorkomt dubbele snapshot
+            await asyncio.sleep(60)
+
+        await asyncio.sleep(20)
 
 @tree.command(
     name="war",
@@ -1014,5 +1020,112 @@ async def strategy(interaction: discord.Interaction):
     await interaction.followup.send(
         embed=embed
     )
-            
+
+async def save_colosseum_snapshot():
+
+    import json
+    import os
+
+    response = api_get(
+        f"clans/%23{CLAN_TAG}/currentriverrace"
+    )
+
+    if response is None:
+        return
+
+    if response.status_code != 200:
+        return
+
+    data = response.json()
+
+    clans = sorted(
+        data.get("clans", []),
+        key=lambda x: x.get("fame", 0),
+        reverse=True
+    )
+
+    eigen_clan = None
+    positie = None
+
+    for i, clan in enumerate(
+        clans,
+        start=1
+    ):
+
+        if clan.get(
+            "tag",
+            ""
+        ).replace("#", "") == CLAN_TAG:
+
+            eigen_clan = clan
+            positie = i
+            break
+
+    if eigen_clan is None:
+        return
+
+    fame = eigen_clan.get(
+        "fame",
+        0
+    )
+
+    datum = datetime.now(
+        TIMEZONE
+    ).strftime("%Y-%m-%d")
+
+    nieuw_record = {
+        "datum": datum,
+        "positie": positie,
+        "fame": fame
+    }
+
+    bestand = "colosseum_history.json"
+
+    historiek = []
+
+    if os.path.exists(bestand):
+
+        try:
+
+            with open(
+                bestand,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
+                historiek = json.load(f)
+
+        except Exception:
+
+            historiek = []
+
+    # voorkom dubbele opslag dezelfde dag
+
+    for record in historiek:
+
+        if record.get("datum") == datum:
+            return
+
+    historiek.append(
+        nieuw_record
+    )
+
+    with open(
+        bestand,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            historiek,
+            f,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    print(
+        f"Colosseum snapshot opgeslagen "
+        f"({datum}) positie={positie} fame={fame}"
+    )
+
 client.run(TOKEN)
