@@ -132,7 +132,7 @@ async def dagelijkse_melding():
 
         nu = datetime.now(TIMEZONE)
 
-         if nu.hour == 12 and nu.minute == 30:
+        if nu.hour == 12 and nu.minute == 30:
 
             await stuur_deck_melding()
 
