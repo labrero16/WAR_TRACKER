@@ -305,5 +305,107 @@ async def warpunten(interaction: discord.Interaction):
         bericht
     )
 
+@tree.command(
+    name="colosseum",
+    description="Toon de colosseum/riverrace analyse"
+)
+async def colosseum(interaction: discord.Interaction):
 
+    await interaction.response.defer()
+
+    response = api_get(
+        f"clans/%23{CLAN_TAG}/currentriverrace"
+    )
+
+    if response is None:
+
+        await interaction.followup.send(
+            "❌ Verbindingsfout met Clash Royale API."
+        )
+        return
+
+    if response.status_code != 200:
+
+        await interaction.followup.send(
+            f"❌ API-fout ({response.status_code})\n{response.text}"
+        )
+        return
+
+    data = response.json()
+
+    clans = sorted(
+        data.get("clans", []),
+        key=lambda x: x.get("fame", 0),
+        reverse=True
+    )
+
+    eigen_index = None
+
+    for i, clan in enumerate(clans):
+
+        if clan.get("tag", "").replace("#", "") == CLAN_TAG:
+            eigen_index = i
+            break
+
+    if eigen_index is None:
+
+        await interaction.followup.send(
+            "❌ Eigen clan niet gevonden."
+        )
+        return
+
+    eigen_clan = clans[eigen_index]
+
+    bericht = "🏟️ **Colosseum Analyse**\n\n"
+
+    for positie, clan in enumerate(clans, start=1):
+
+        naam = clan.get("name", "Onbekend")
+        fame = clan.get("fame", 0)
+
+        marker = ""
+
+        if clan.get("tag", "").replace("#", "") == CLAN_TAG:
+            marker = " 👈"
+
+        bericht += (
+            f"**{positie}. {naam}** - {fame}{marker}\n"
+        )
+
+    bericht += "\n"
+
+    eigen_fame = eigen_clan.get("fame", 0)
+
+    if eigen_index > 0:
+
+        leider_fame = clans[0].get("fame", 0)
+
+        verschil_leider = leider_fame - eigen_fame
+
+        bericht += (
+            f"📈 Achterstand op leider: "
+            f"**{verschil_leider}** fame\n"
+        )
+
+    else:
+
+        bericht += (
+            "🥇 Jullie staan momenteel op de eerste plaats\n"
+        )
+
+    if eigen_index < len(clans) - 1:
+
+        achtervolger_fame = (
+            clans[eigen_index + 1].get("fame", 0)
+        )
+
+        voorsprong = eigen_fame - achtervolger_fame
+
+        bericht += (
+            f"📉 Voorsprong op achtervolger: "
+            f"**{voorsprong}** fame\n"
+        )
+
+    await interaction.followup.send(bericht)
+    
 client.run(TOKEN)
