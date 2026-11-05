@@ -1164,4 +1164,133 @@ async def testsnapshot(
             "❌ colosseum_history.json werd niet aangemaakt."
         )
 
+@tree.command(
+    name="colosseumstand",
+    description="Toon de evolutie van de Colosseumweek"
+)
+async def colosseumstand(
+    interaction: discord.Interaction
+):
+
+    await interaction.response.defer()
+
+    import json
+    import os
+
+    bestand = "colosseum_history.json"
+
+    if not os.path.exists(bestand):
+
+        await interaction.followup.send(
+            "⚠️ Er zijn nog geen opgeslagen Colosseum-standen."
+        )
+        return
+
+    try:
+
+        with open(
+            bestand,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            historiek = json.load(f)
+
+    except Exception as e:
+
+        await interaction.followup.send(
+            f"❌ Fout bij lezen historiek:\n{e}"
+        )
+        return
+
+    if not historiek:
+
+        await interaction.followup.send(
+            "⚠️ Historiek is leeg."
+        )
+        return
+
+    embed = discord.Embed(
+        title="🏟️ Colosseum Week",
+        color=0x9b59b6
+    )
+
+    evolutie = ""
+
+    for i, item in enumerate(
+        historiek,
+        start=1
+    ):
+
+        positie = item.get(
+            "positie",
+            "?"
+        )
+
+        fame = item.get(
+            "fame",
+            0
+        )
+
+        datum = item.get(
+            "datum",
+            "?"
+        )
+
+        evolutie += (
+            f"Dag {i}\n"
+            f"📅 {datum}\n"
+            f"🏆 Positie #{positie}\n"
+            f"⭐ Fame: {fame:,}\n\n"
+        ).replace(",", ".")
+
+    embed.add_field(
+        name="📈 Evolutie",
+        value=evolutie[:1024],
+        inline=False
+    )
+
+    eerste = historiek[0]
+    laatste = historiek[-1]
+
+    verschil_positie = (
+        eerste["positie"]
+        -
+        laatste["positie"]
+    )
+
+    if verschil_positie > 0:
+
+        evolutie_tekst = (
+            f"⬆️ Gestegen met "
+            f"{verschil_positie} plaats(en)"
+        )
+
+    elif verschil_positie < 0:
+
+        evolutie_tekst = (
+            f"⬇️ Gezakt met "
+            f"{abs(verschil_positie)} plaats(en)"
+        )
+
+    else:
+
+        evolutie_tekst = (
+            "➡️ Positie onveranderd"
+        )
+
+    embed.add_field(
+        name="📊 Samenvatting",
+        value=(
+            f"Start: #{eerste['positie']}\n"
+            f"Huidig: #{laatste['positie']}\n\n"
+            f"{evolutie_tekst}"
+        ),
+        inline=False
+    )
+
+    await interaction.followup.send(
+        embed=embed
+    )
+
 client.run(TOKEN)
